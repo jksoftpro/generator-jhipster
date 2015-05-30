@@ -3,11 +3,12 @@ var util = require('util'),
     path = require('path'),
     yeoman = require('yeoman-generator'),
     chalk = require('chalk'),
-    _s = require('underscore.string'),
+    _ = require('underscore.string'),
     shelljs = require('shelljs'),
     scriptBase = require('../script-base'),
     packagejs = require(__dirname + '/../package.json'),
-    crypto = require("crypto");
+    crypto = require("crypto"),
+    ejs = require('ejs');
 
 var JhipsterGenerator = module.exports = function JhipsterGenerator(args, options, config) {
 
@@ -436,8 +437,10 @@ JhipsterGenerator.prototype.app = function app() {
 
     // Remove old files
 
-    // Angular JS app
-    this.angularAppName = _s.camelize(_s.slugify(this.baseName)) + 'App';
+    // Application name modified, using each technology's conventions
+    this.angularAppName = _.camelize(_.slugify(this.baseName)) + 'App';
+    this.camelizedBaseName = _.camelize(this.baseName);
+    this.slugifiedBaseName = _.slugify(this.baseName);
 
     // Create application
     this.template('_package.json', 'package.json', this, {});
@@ -500,6 +503,7 @@ JhipsterGenerator.prototype.app = function app() {
     this.template(resourceDir + '/config/_application-prod.yml', resourceDir + 'config/application-prod.yml', this, {});
 
     if (this.databaseType == "sql") {
+        this.liquibaseNow = '${now}';
         this.template(resourceDir + '/config/liquibase/changelog/_initial_schema.xml', resourceDir + 'config/liquibase/changelog/00000000000000_initial_schema.xml', this, {});
         this.copy(resourceDir + '/config/liquibase/master.xml', resourceDir + 'config/liquibase/master.xml');
         this.copy(resourceDir + '/config/liquibase/users.csv', resourceDir + 'config/liquibase/users.csv');
@@ -880,6 +884,7 @@ JhipsterGenerator.prototype.app = function app() {
 
     // Index page
     this.indexFile = this.readFileAsString(path.join(this.sourceRoot(), webappDir + '_index.html'));
+    this.engine = require('ejs').render;
     this.indexFile = this.engine(this.indexFile, this, {});
 
     // Create Test Javascript files
